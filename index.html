@@ -2,64 +2,58 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JSSpeccy v3 Receiver</title>
   <style>
-    html, body { 
-      margin: 0; padding: 0; width: 100vw; height: 100vh; 
+    body, html { 
+      margin: 0; padding: 0; width: 100%; height: 100%; 
       background: #000; overflow: hidden; 
       display: flex; justify-content: center; align-items: center; 
     }
-    #speccy-container { width: 100vw; height: 100vh; }
+    #jsspeccy { width: 100%; height: 100%; }
   </style>
+  <!-- Load the main jsspeccy script from your runtime directory -->
+  <script src="runtime/jsspeccy.js"></script>
 </head>
 <body>
 
-  <div id="speccy-container"></div>
+  <div id="jsspeccy"></div>
 
-  <!-- Load as an ES module since jsspeccy.js relies on internal module imports -->
-  <script type="module">
-    import { JSSpeccy } from './runtime/jsspeccy.js';
+  <script>
+    let emu = null;
 
-    let speccy = null;
-
-    window.addEventListener('load', function() {
-      const container = document.getElementById('speccy-container');
-
+    window.addEventListener('load', () => {
       try {
-        speccy = JSSpeccy(container, {
+        // Initialize JSSpeccy v3 using the container element and options
+        emu = JSSpeccy(document.getElementById('jsspeccy'), {
           autoStart: true,
-          zoom: 3,
+          zoom: 2,
           sandbox: false
         });
-        
-        window.speccy = speccy;
-      } catch (e) {
-        console.error("JSSpeccy v3 init error:", e);
+        window.emu = emu;
+      } catch (err) {
+        console.error("Initialization error:", err);
       }
 
-      // Signal Google Apps Script that receiver is ready
+      // Notify the parent Google Sheet frame that we are ready
       if (window.parent) {
         window.parent.postMessage({ status: 'READY' }, '*');
       }
     });
 
-    // Receive and inject snapshot payload from Apps Script
-    window.addEventListener('message', function(event) {
+    // Listen for the snapshot payload coming from Google Apps Script
+    window.addEventListener('message', (event) => {
       const msg = event.data;
-      if (msg && msg.action === 'loadSnapshot' && msg.base64 && window.speccy) {
+      if (msg && msg.action === 'loadSnapshot' && msg.base64 && window.emu) {
         try {
-          const binaryString = window.atob(msg.base64);
+          const binaryString = atob(msg.base64);
           const bytes = new Uint8Array(binaryString.length);
           for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);
           }
-          
-          if (typeof window.speccy.openFile === 'function') {
-            window.speccy.openFile(msg.fileName || 'snapshot.sna', bytes);
-          }
+          // Use v3 file loading method to inject the binary buffer
+          window.emu.openFile(msg.fileName || 'snapshot.sna', bytes);
         } catch (err) {
-          console.error("Snapshot load error:", err);
+          console.error("Failed to inject snapshot:", err);
         }
       }
     });
