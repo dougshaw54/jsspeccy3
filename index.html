@@ -13,7 +13,7 @@
     #speccy-container { width: 100vw; height: 100vh; }
   </style>
 
-  <!-- Load the official local v3 script from your reforked runtime folder -->
+  <!-- Standard script load as outlined in v3 documentation -->
   <script src="runtime/jsspeccy.js"></script>
 </head>
 <body>
@@ -32,10 +32,9 @@
           speccy = JSSpeccy(container, {
             autoStart: true,
             zoom: 3,
-            sandbox: false // Set to true if you want to hide default UI file pickers
+            sandbox: false
           });
           
-          // Expose globally for postMessage handling
           window.speccy = speccy;
         } catch (e) {
           console.error("JSSpeccy v3 init error:", e);
@@ -59,7 +58,6 @@
             bytes[i] = binaryString.charCodeAt(i);
           }
           
-          // V3 file loading method via structural buffer / file handling
           if (typeof window.speccy.openFile === 'function') {
             window.speccy.openFile(msg.fileName || 'snapshot.sna', bytes);
           }
@@ -71,4 +69,3 @@
   </script>
 </body>
 </html>
-
