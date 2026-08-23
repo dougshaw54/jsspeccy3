@@ -1,1 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSSpeccy v3 Receiver</title>
+  <style>
+    html, body { 
+      margin: 0; padding: 0; width: 100vw; height: 100vh; 
+      background: #000; overflow: hidden; 
+      display: flex; justify-content: center; align-items: center; 
+    }
+    #speccy-container { width: 100vw; height: 100vh; }
+  </style>
+
+  <!-- Load the official local v3 script from your reforked runtime folder -->
+  <script src="runtime/jsspeccy.js"></script>
+</head>
+<body>
+
+  <div id="speccy-container"></div>
+
+  <script>
+    let speccy = null;
+
+    window.addEventListener('load', function() {
+      const container = document.getElementById('speccy-container');
+
+      if (typeof JSSpeccy !== 'undefined') {
+        try {
+          // Initialize using official v3 parameters
+          speccy = JSSpeccy(container, {
+            autoStart: true,
+            zoom: 3,
+            sandbox: false // Set to true if you want to hide default UI file pickers
+          });
+          
+          // Expose globally for postMessage handling
+          window.speccy = speccy;
+        } catch (e) {
+          console.error("JSSpeccy v3 init error:", e);
+        }
+      }
+
+      // Signal Google Apps Script that receiver is ready
+      if (window.parent) {
+        window.parent.postMessage({ status: 'READY' }, '*');
+      }
+    });
+
+    // Receive and inject snapshot payload from Apps Script
+    window.addEventListener('message', function(event) {
+      const msg = event.data;
+      if (msg && msg.action === 'loadSnapshot' && msg.base64 && window.speccy) {
+        try {
+          const binaryString = window.atob(msg.base64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          
+          // V3 file loading method via structural buffer / file handling
+          if (typeof window.speccy.openFile === 'function') {
+            window.speccy.openFile(msg.fileName || 'snapshot.sna', bytes);
+          }
+        } catch (err) {
+          console.error("Snapshot load error:", err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
 
