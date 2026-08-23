@@ -12,33 +12,30 @@
     }
     #speccy-container { width: 100vw; height: 100vh; }
   </style>
-
-  <!-- Standard script load as outlined in v3 documentation -->
-  <script src="runtime/jsspeccy.js"></script>
 </head>
 <body>
 
   <div id="speccy-container"></div>
 
-  <script>
+  <!-- Load as an ES module since jsspeccy.js relies on internal module imports -->
+  <script type="module">
+    import { JSSpeccy } from './runtime/jsspeccy.js';
+
     let speccy = null;
 
     window.addEventListener('load', function() {
       const container = document.getElementById('speccy-container');
 
-      if (typeof JSSpeccy !== 'undefined') {
-        try {
-          // Initialize using official v3 parameters
-          speccy = JSSpeccy(container, {
-            autoStart: true,
-            zoom: 3,
-            sandbox: false
-          });
-          
-          window.speccy = speccy;
-        } catch (e) {
-          console.error("JSSpeccy v3 init error:", e);
-        }
+      try {
+        speccy = JSSpeccy(container, {
+          autoStart: true,
+          zoom: 3,
+          sandbox: false
+        });
+        
+        window.speccy = speccy;
+      } catch (e) {
+        console.error("JSSpeccy v3 init error:", e);
       }
 
       // Signal Google Apps Script that receiver is ready
